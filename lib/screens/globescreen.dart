@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sphere/sphere.dart';
+import 'package:travel_the_globe/utilities/widgets/globe.dart';
 
 class GlobeScreen extends StatefulWidget {
   @override
@@ -26,9 +26,8 @@ class _GlobeScreenState extends State<GlobeScreen> with SingleTickerProviderStat
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: Sphere(
-            surface: 'assets/images/world.png',
-            radius: 150,
+          child: Globe(
+            surface: "assets/images/world.png",
             latitude: 0,
             longitude: 0,
           ),
