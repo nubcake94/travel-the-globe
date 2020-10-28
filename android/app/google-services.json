@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "74226540605",
+    "firebase_url": "https://travel-the-globe-d5c42.firebaseio.com",
+    "project_id": "travel-the-globe-d5c42",
+    "storage_bucket": "travel-the-globe-d5c42.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:74226540605:android:ced06cfa734e562b3f8a54",
+        "android_client_info": {
+          "package_name": "com.nubcake.travel_the_globe"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "74226540605-9ukouatjnuflqck9hefpcamtpvf8vadl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNzcoSHMiJBMxtPAU2IfBq6lWSmJpxgJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "74226540605-9ukouatjnuflqck9hefpcamtpvf8vadl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "74226540605-i2427g3f2dnv73lluhjf4qme55j8mg1e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.travelTheGlobe"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
