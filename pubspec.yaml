@@ -19,6 +19,7 @@ dependencies:
   firebase_database: ^4.1.1
   splashscreen: 1.2.0
   flutter_signin_button: ^1.0.0
+  geocoding: ^1.0.5
 
 dev_dependencies:
   flutter_test:
@@ -32,6 +33,8 @@ flutter:
     - assets/images/world.svg
     - assets/images/world.png
     - assets/images/logo.png
+    - assets/images/wrld-18.png
+    #https://vemaps.com/world/wrld-18
     #- images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

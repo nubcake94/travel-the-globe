@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:geocoding/geocoding.dart';
 import 'package:tuple/tuple.dart';
 
 // ignore: must_be_immutable
@@ -27,6 +28,8 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
   double surfaceHeight;
   double rotationX = 0;
   double rotationZ = 0;
+  double latitude = 0;
+  double longitude = 0;
   double _lastRotationX = 0;
   double _lastRotationZ = 0;
   Offset _lastFocalPoint;
@@ -54,8 +57,28 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
 
   void rotate(Offset offset) {
     rotationX -= offset.dy / radius;
+    if (rotationX >= 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
+    if (rotationX <= -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
     rotationZ += offset.dx / radius;
+    rotationZ = rotationZ % (2 * math.pi);
     setState(() {});
+  }
+
+  void printState() {
+    print("--- Globe state ---\n"
+        "Origo : $_origo\n"
+        "Radius : $radius\n"
+        "Longitude : $longitude - Latitude : $latitude\n"
+        "RotationZ : $rotationZ - RotationX : $rotationX\n"
+        "LastClickLocalPosition : $_lastClickLocalPosition\n\n");
+  }
+
+  void setLatitude() {
+    latitude = (rotationX + (23.5 + 19.41) / 180 * math.pi) / math.pi * 180;
+  }
+
+  void setLongitude() {
+    longitude = ((rotationZ - ((widget.longitude - 10) * math.pi / 180) % (2 * math.pi)) / math.pi) * 180.0 / math.pi;
   }
 
   Future<SphereImage> buildSphere(double maxWidth, double maxHeight) {
@@ -149,13 +172,16 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    rotationX = widget.latitude * math.pi / 180;
-    rotationZ = widget.longitude * math.pi / 180;
+    latitude = widget.latitude;
+    longitude = widget.longitude;
+    rotationX = ((widget.latitude - 23.5 - 19.41) * math.pi / 180);
+    rotationZ = ((widget.longitude - 10) * math.pi / 180) % (2 * math.pi);
     rotationZController = AnimationController(vsync: this)
       ..addListener(() {
         setState(() => rotationZ = rotationZAnimation.value);
       });
     loadSurface();
+    printState();
   }
 
   @override
@@ -213,6 +239,8 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
   void onScaleUpdate(ScaleUpdateDetails details) {
     final offset = details.focalPoint - _lastFocalPoint;
     rotationX = _lastRotationX + offset.dy / radius;
+    if (rotationX >= 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
+    if (rotationX <= -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
     rotationZ = _lastRotationZ - offset.dx / radius;
     setState(() {});
   }
@@ -227,43 +255,57 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
         Tween<double>(begin: rotationZ, end: rotationZ + s).animate(CurveTween(curve: Curves.decelerate).animate(rotationZController));
     rotationZController
       ..value = 0
-      ..forward();
+      ..forward().then((value) => rotationZ = rotationZ % (2 * math.pi));
+
+    printState();
   }
 
   void onTapDown(TapDownDetails details) {
     _lastClickLocalPosition = details.localPosition;
     setState(() {});
-    print('onTapDown fired $_lastClickLocalPosition');
   }
 
   void onTap() {
-    print('onTap fired  $_lastClickLocalPosition');
     final Offset clickedPoint = Offset(
       _lastClickLocalPosition.dx - _origo.dx,
       _lastClickLocalPosition.dy - _origo.dy,
     );
-    print(rayCast(clickedPoint));
-  }
 
-  void onDoubleTapDown(TapDownDetails details) {
-    _lastClickLocalPosition = details.localPosition;
-    setState(() {});
-    print('onDoubleTapDown fired $_lastClickLocalPosition');
-  }
-
-  void onDoubleTap() {
-    print('onDoubleTap fired  $_lastClickLocalPosition');
-    final Offset clickedPoint = Offset(
-      _lastClickLocalPosition.dx - _origo.dx,
-      _lastClickLocalPosition.dy - _origo.dy,
-    );
     var rayCastResult = rayCast(clickedPoint);
     if (rayCastResult.isEmpty) {
       return;
     }
     double z = rayCastResult[0].item2;
     rotate(clickedPoint);
-    print(z);
+
+    printState();
+  }
+
+  void onDoubleTapDown(TapDownDetails details) {
+    _lastClickLocalPosition = details.localPosition;
+    setState(() {});
+  }
+
+  void onDoubleTap() async {
+    final Offset clickedPoint = Offset(
+      _lastClickLocalPosition.dx - _origo.dx,
+      _lastClickLocalPosition.dy - _origo.dy,
+    );
+
+    var rayCastResult = rayCast(clickedPoint);
+    if (rayCastResult.isEmpty) {
+      return;
+    }
+    double z = rayCastResult[0].item2;
+    rotate(clickedPoint);
+
+    setLatitude();
+    setLongitude();
+
+    printState();
+
+    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+    print(placemarks);
   }
 }
 

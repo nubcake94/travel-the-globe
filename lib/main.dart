@@ -12,7 +12,7 @@ void main() async {
 }
 
 class TravelTheGlobe extends StatelessWidget {
-  ThemeData theme = ThemeData.dark().copyWith(
+  final ThemeData theme = ThemeData.dark().copyWith(
     primaryColor: AppColorPalette.DeepKoamaru,
     scaffoldBackgroundColor: AppColorPalette.DeepKoamaru,
     accentColor: AppColorPalette.Ceil,

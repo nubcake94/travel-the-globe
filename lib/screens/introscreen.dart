@@ -9,11 +9,11 @@ import 'package:travel_the_globe/utilities/constants/colors.dart';
 class IntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    //User user = FirebaseAuth.instance.currentUser;
-    User user = null; // for debugging only
+    User user = FirebaseAuth.instance.currentUser;
+    //User user = null; // for debugging only
     return SplashScreen(
       navigateAfterSeconds: user != null ? GlobeScreen(/*uid: user.uid*/) : LoginScreen(),
-      seconds: 5,
+      seconds: 1,
       title: Text(
         'Welcome to my thesis!',
         style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
