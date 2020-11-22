@@ -13,14 +13,22 @@ class IntroScreen extends StatelessWidget {
     //User user = null; // for debugging only
     return SplashScreen(
       navigateAfterSeconds: user != null ? GlobeScreen(/*uid: user.uid*/) : LoginScreen(),
-      seconds: 1,
+      seconds: 5,
       title: Text(
-        'Welcome to my thesis!',
-        style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
+        'Travel the Globe',
+        style: new TextStyle(
+            fontFamily: 'Goldman',
+            fontWeight: FontWeight.w700,
+            fontSize: 32.0,
+            decoration: TextDecoration.underline,
+            decorationColor: AppColorPalette.BabyBlue,
+            decorationThickness: 2),
       ),
+      image: Image.asset("assets/images/logo.png"),
+      photoSize: 100,
       styleTextUnderTheLoader: TextStyle(),
-      backgroundColor: AppColorPalette.DeepKoamaru,
-      loaderColor: AppColorPalette.Ceil,
+      backgroundColor: AppColorPalette.DarkGrey,
+      loaderColor: AppColorPalette.BabyBlue,
     );
   }
 }

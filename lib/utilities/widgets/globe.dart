@@ -1,15 +1,16 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter/widgets.dart';
+import 'package:travel_the_globe/utilities/constants/continents.dart';
+import 'package:travel_the_globe/utilities/constants/globe_modes.dart';
 import 'package:tuple/tuple.dart';
 
-// ignore: must_be_immutable
 class Globe extends StatefulWidget {
   final String surface;
   final double latitude;
@@ -24,10 +25,13 @@ class Globe extends StatefulWidget {
 
 class _GlobeState extends State<Globe> with TickerProviderStateMixin {
   Uint32List surface;
+  GlobeMode _globeMode = GlobeMode.ZOOM_OUT;
   double surfaceWidth;
   double surfaceHeight;
   double rotationX = 0;
   double rotationZ = 0;
+  double zoom = 0.0;
+  final double _zoomIn = 4.0;
   double latitude = 0;
   double longitude = 0;
   double _lastRotationX = 0;
@@ -36,13 +40,18 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
   Offset _origo;
   Offset _lastClickLocalPosition;
   AnimationController rotationZController;
+  AnimationController rotationXController;
+  AnimationController zoomController;
   Animation<double> rotationZAnimation;
+  Animation<double> rotationXAnimation;
+  Animation<double> zoomAnimation;
   double radius;
+  double get zoomedRadius => radius * math.pow(2, zoom);
 
   List<Tuple2<Offset, double>> rayCast(Offset start) {
     List<Tuple2<Offset, double>> result = List();
     // (X - X0)^2 + (Y - Y0) ^2 + z^2 = r^2
-    double positiveSquare = math.sqrt(math.pow(radius, 2) - math.pow(start.dx, 2) - math.pow(start.dy, 2));
+    double positiveSquare = math.sqrt(math.pow(zoomedRadius, 2) - math.pow(start.dx, 2) - math.pow(start.dy, 2));
     if (positiveSquare.isNaN) {
       print('no hit result - input was $start');
       return result;
@@ -55,13 +64,29 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
     return result;
   }
 
-  void rotate(Offset offset) {
-    rotationX -= offset.dy / radius;
-    if (rotationX >= 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
-    if (rotationX <= -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
-    rotationZ += offset.dx / radius;
-    rotationZ = rotationZ % (2 * math.pi);
-    setState(() {});
+  Future<void> rotate(Offset offset) async {
+    rotationXController.duration = Duration(milliseconds: 500);
+    final endX = rotationX - offset.dy / zoomedRadius;
+    rotationXAnimation = Tween<double>(begin: rotationX, end: endX.abs() >= 0.5 * math.pi ? endX.sign * 0.5 * math.pi : endX)
+        .animate(CurveTween(curve: Curves.decelerate).animate(rotationXController));
+    rotationXController
+      ..value = 0
+      ..forward();
+
+    rotationZController.duration = Duration(milliseconds: 500);
+    rotationZAnimation = Tween<double>(begin: rotationZ, end: rotationZ + offset.dx / zoomedRadius)
+        .animate(CurveTween(curve: Curves.decelerate).animate(rotationZController));
+    rotationZController
+      ..value = 0
+      ..forward().then((value) => rotationZ = rotationZ % (2 * math.pi));
+  }
+
+  Offset rotate_immediate(Offset offset) {
+    var dx = _lastRotationX - offset.dy / zoomedRadius;
+    dx = dx.abs() > 0.5 * math.pi ? dx.sign * 0.5 * math.pi : dx;
+    var dy = _lastRotationZ + offset.dx / zoomedRadius;
+    dy = dy % (2.0 * math.pi);
+    return Offset(dx, dy);
   }
 
   void printState() {
@@ -73,17 +98,25 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
         "LastClickLocalPosition : $_lastClickLocalPosition\n\n");
   }
 
-  void setLatitude() {
-    latitude = (rotationX + (23.5 + 19.41) / 180 * math.pi) / math.pi * 180;
+  double getLatitude({double rX}) {
+    return rX / math.pi * 180;
   }
 
-  void setLongitude() {
-    longitude = ((rotationZ - ((widget.longitude - 10) * math.pi / 180) % (2 * math.pi)) / math.pi) * 180.0 / math.pi;
+  double getRotationX({double latitude}) {
+    return latitude / 180 * math.pi;
+  }
+
+  double getLongitude({double rZ}) {
+    return ((((10.5) / 180 * math.pi) + rZ - math.pi) % (math.pi * 2) / math.pi * 180) - 180;
+  }
+
+  double getRotationZ({double longitude}) {
+    return (latitude - 10.5) / 180 * math.pi;
   }
 
   Future<SphereImage> buildSphere(double maxWidth, double maxHeight) {
     if (surface == null) return null;
-    final r = radius.roundToDouble();
+    final r = zoomedRadius.roundToDouble();
     final minX = math.max(-r, (-1 - widget.alignment.x) * maxWidth / 2);
     final minY = math.max(-r, (-1 + widget.alignment.y) * maxHeight / 2);
     final maxX = math.min(r, (1 - widget.alignment.x) * maxWidth / 2);
@@ -174,11 +207,25 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
     super.initState();
     latitude = widget.latitude;
     longitude = widget.longitude;
-    rotationX = ((widget.latitude - 23.5 - 19.41) * math.pi / 180);
-    rotationZ = ((widget.longitude - 10) * math.pi / 180) % (2 * math.pi);
+    rotationX = (widget.latitude * math.pi / 180);
+    rotationZ = ((widget.longitude - 10.5) * math.pi / 180) % (2 * math.pi);
     rotationZController = AnimationController(vsync: this)
       ..addListener(() {
-        setState(() => rotationZ = rotationZAnimation.value);
+        setState(() {
+          rotationZ = rotationZAnimation.value;
+        });
+      });
+    rotationXController = AnimationController(vsync: this)
+      ..addListener(() {
+        setState(() {
+          rotationX = rotationXAnimation.value;
+        });
+      });
+    zoomController = AnimationController(vsync: this)
+      ..addListener(() {
+        setState(() {
+          zoom = zoomController.value;
+        });
       });
     loadSurface();
     printState();
@@ -187,6 +234,8 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
   @override
   void dispose() {
     rotationZController.dispose();
+    rotationXController.dispose();
+    zoomController.dispose();
     super.dispose();
   }
 
@@ -202,12 +251,17 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
               _origo = Offset(constraints.maxWidth, constraints.maxHeight) * 0.5;
               return GestureDetector(
                 onTapDown: (details) => onTapDown(details),
-                onTap: () => onTap(),
+                onTap: () => {} /*onTap()*/,
                 onDoubleTapDown: (details) => onDoubleTapDown(details),
                 onDoubleTap: () => onDoubleTap(),
-                onScaleStart: (ScaleStartDetails details) => onScaleStart(details),
-                onScaleUpdate: (ScaleUpdateDetails details) => onScaleUpdate(details),
-                onScaleEnd: (ScaleEndDetails details) => onScaleEnd(details),
+                onScaleStart: _globeMode == GlobeMode.ZOOM_OUT
+                    ? (ScaleStartDetails details) => onScaleStart(details)
+                    : (ScaleStartDetails details) {},
+                onScaleUpdate: _globeMode == GlobeMode.ZOOM_OUT
+                    ? (ScaleUpdateDetails details) => onScaleUpdate(details)
+                    : (ScaleUpdateDetails details) {},
+                onScaleEnd:
+                    _globeMode == GlobeMode.ZOOM_OUT ? (ScaleEndDetails details) => onScaleEnd(details) : (ScaleEndDetails details) {},
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
                     return FutureBuilder(
@@ -234,51 +288,46 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
     _lastRotationZ = rotationZ;
     _lastFocalPoint = details.focalPoint;
     rotationZController.stop();
+    rotationXController.stop();
   }
 
   void onScaleUpdate(ScaleUpdateDetails details) {
     final offset = details.focalPoint - _lastFocalPoint;
     rotationX = _lastRotationX + offset.dy / radius;
-    if (rotationX >= 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = 0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
-    if (rotationX <= -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi) rotationX = -0.5 * math.pi - (23.5 + 19.41) / 180 * math.pi;
+    if (rotationX >= 0.5 * math.pi) rotationX = 0.5 * math.pi;
+    if (rotationX <= -0.5 * math.pi) rotationX = -0.5 * math.pi;
     rotationZ = _lastRotationZ - offset.dx / radius;
+    rotationZ = rotationZ % (2 * math.pi);
     setState(() {});
   }
 
   void onScaleEnd(ScaleEndDetails details) {
     final a = -300;
-    final v = details.velocity.pixelsPerSecond.dx * 0.3;
-    final t = (v / a).abs() * 1000;
-    final s = (v.sign * 0.5 * v * v / a) / radius;
-    rotationZController.duration = Duration(milliseconds: t.toInt());
+    final vZ = details.velocity.pixelsPerSecond.dx * 0.3;
+    final tZ = (vZ / a).abs() * 1000;
+    final sZ = (vZ.sign * 0.5 * vZ * vZ / a) / radius;
+    rotationZController.duration = Duration(milliseconds: tZ.toInt());
     rotationZAnimation =
-        Tween<double>(begin: rotationZ, end: rotationZ + s).animate(CurveTween(curve: Curves.decelerate).animate(rotationZController));
+        Tween<double>(begin: rotationZ, end: rotationZ + sZ).animate(CurveTween(curve: Curves.decelerate).animate(rotationZController));
     rotationZController
       ..value = 0
       ..forward().then((value) => rotationZ = rotationZ % (2 * math.pi));
 
-    printState();
+    final vX = details.velocity.pixelsPerSecond.dy * 0.15;
+    final tX = (vX / a / 2).abs() * 1000;
+    final sX = (vX.sign * 0.5 * vX * vX / a) / radius;
+    final endX = rotationX - sX;
+    rotationXController.duration = Duration(milliseconds: tX.toInt());
+    rotationXAnimation = Tween<double>(begin: rotationX, end: endX.abs() >= 0.5 * math.pi ? endX.sign * 0.5 * math.pi : endX)
+        .animate(CurveTween(curve: Curves.decelerate).animate(rotationXController));
+    rotationXController
+      ..value = 0
+      ..forward();
   }
 
   void onTapDown(TapDownDetails details) {
     _lastClickLocalPosition = details.localPosition;
     setState(() {});
-  }
-
-  void onTap() {
-    final Offset clickedPoint = Offset(
-      _lastClickLocalPosition.dx - _origo.dx,
-      _lastClickLocalPosition.dy - _origo.dy,
-    );
-
-    var rayCastResult = rayCast(clickedPoint);
-    if (rayCastResult.isEmpty) {
-      return;
-    }
-    double z = rayCastResult[0].item2;
-    rotate(clickedPoint);
-
-    printState();
   }
 
   void onDoubleTapDown(TapDownDetails details) {
@@ -296,16 +345,32 @@ class _GlobeState extends State<Globe> with TickerProviderStateMixin {
     if (rayCastResult.isEmpty) {
       return;
     }
-    double z = rayCastResult[0].item2;
-    rotate(clickedPoint);
+    _lastRotationX = rotationX;
+    _lastRotationZ = rotationZ;
 
-    setLatitude();
-    setLongitude();
+    Offset clickedPointRotation = rotate_immediate(clickedPoint);
+    double latitude = getLatitude(rX: clickedPointRotation.dx);
+    double longitude = getLongitude(rZ: clickedPointRotation.dy);
 
-    printState();
+    Continent pickedContinent = Continents.closest(latitude: latitude, longitude: longitude);
 
-    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-    print(placemarks);
+    rotate(clickedPoint).then((value) {
+      if (_globeMode == GlobeMode.ZOOM_OUT) {
+        setState(() {
+          _globeMode = GlobeMode.ZOOM_IN;
+        });
+        zoomController.duration = Duration(milliseconds: 500);
+        zoomAnimation = Tween<double>(begin: zoom, end: _zoomIn).animate(CurveTween(curve: Curves.decelerate).animate(zoomController));
+        zoomController
+          ..value = 0
+          ..forward();
+      }
+    });
+
+    //printState();
+
+    /*List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+    print(placemarks[0]);*/
   }
 }
 

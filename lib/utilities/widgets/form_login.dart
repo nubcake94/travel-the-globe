@@ -1,16 +1,20 @@
+import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:travel_the_globe/screens/globescreen.dart';
 import 'package:travel_the_globe/utilities/constants/colors.dart';
+import 'package:travel_the_globe/utilities/constants/decorations.dart' as decorations;
 
 class LoginForm extends StatefulWidget {
+  LoginForm({Key key}) : super(key: key);
+
   @override
-  _LoginFormState createState() => _LoginFormState();
+  LoginFormState createState() => LoginFormState();
 }
 
-class _LoginFormState extends State<LoginForm> {
-  final _formKey = GlobalKey<_LoginFormState>();
+class LoginFormState extends State<LoginForm> {
+  final _formKey = GlobalKey<LoginFormState>();
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -34,49 +38,32 @@ class _LoginFormState extends State<LoginForm> {
               child: TextFormField(
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 controller: emailController,
-                decoration: InputDecoration(
-                  hintText: 'Enter email',
-                  hintStyle: TextStyle(color: Colors.white24),
-                  fillColor: Colors.white10,
-                  filled: true,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16.0)),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                validator: (value) => value.isEmpty ? 'Enter email' : null,
+                style: TextStyle(color: Colors.black),
+                decoration: decorations.inputDecoration(hintText: 'Enter email'),
+                validator: (value) {
+                  if (value.isEmpty) return 'Enter email';
+                  return EmailValidator.validate(value) ? null : 'Wrong format';
+                },
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               child: TextFormField(
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 controller: passwordController,
                 obscureText: true,
-                decoration: InputDecoration(
-                  hintText: 'Enter password',
-                  hintStyle: TextStyle(color: Colors.white24),
-                  fillColor: Colors.white10,
-                  filled: true,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16.0)),
-                    borderSide: BorderSide.none, // for fill
-                  ),
-                ),
+                style: TextStyle(color: Colors.black),
+                decoration: decorations.inputDecoration(hintText: 'Enter password'),
                 validator: (value) => value.isEmpty ? 'Enter password' : null,
               ),
             ),
-            RaisedButton(
-              onPressed: () => _login(),
-              child: Text('Log in'),
-            )
           ],
         ),
       ),
     );
   }
 
-  void _login() {
+  void login() {
     firebaseAuth
         .signInWithEmailAndPassword(
       email: emailController.text,

@@ -27,7 +27,7 @@ class _GlobeScreenState extends State<GlobeScreen> with SingleTickerProviderStat
       body: SafeArea(
         child: Center(
           child: Globe(
-            surface: "assets/images/wrld-18.png",
+            surface: "assets/images/map/map1.png",
             latitude: 0,
             longitude: 0,
           ),

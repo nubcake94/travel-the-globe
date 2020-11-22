@@ -1,8 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:travel_the_globe/screens/globescreen.dart';
+import 'package:flutter/services.dart';
 import 'package:travel_the_globe/screens/introscreen.dart';
-import 'package:travel_the_globe/screens/registerscreen.dart';
 import 'package:travel_the_globe/utilities/constants/colors.dart';
 
 void main() async {
@@ -13,9 +12,9 @@ void main() async {
 
 class TravelTheGlobe extends StatelessWidget {
   final ThemeData theme = ThemeData.dark().copyWith(
-    primaryColor: AppColorPalette.DeepKoamaru,
-    scaffoldBackgroundColor: AppColorPalette.DeepKoamaru,
-    accentColor: AppColorPalette.Ceil,
+    primaryColor: AppColorPalette.DarkGrey,
+    scaffoldBackgroundColor: AppColorPalette.DarkGrey,
+    accentColor: AppColorPalette.BabyBlue,
   );
   @override
   Widget build(BuildContext context) {
