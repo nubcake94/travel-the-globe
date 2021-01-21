@@ -1,4 +1,5 @@
 enum GlobeMode {
-  ZOOM_OUT,
-  ZOOM_IN,
+  ZOOMED_OUT,
+  ZOOMED_IN,
+  TRAVELLING,
 }

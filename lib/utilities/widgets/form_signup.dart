@@ -90,7 +90,7 @@ class SignUpFormState extends State<SignUpForm> {
       db.child(result.user.uid).set({"email": emailController.text, "age": ageController.text}).then((res) => {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => GlobeScreen(/*uid*/)),
+              MaterialPageRoute(builder: (context) => GlobeScreen(userId: result.user.uid)),
             )
           });
     }).catchError((err) => {

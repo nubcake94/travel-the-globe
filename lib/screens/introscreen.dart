@@ -3,17 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:splashscreen/splashscreen.dart';
 import 'package:travel_the_globe/screens/globescreen.dart';
 import 'package:travel_the_globe/screens/loginscreen.dart';
-import 'package:travel_the_globe/screens/registerscreen.dart';
 import 'package:travel_the_globe/utilities/constants/colors.dart';
 
 class IntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     User user = FirebaseAuth.instance.currentUser;
-    //User user = null; // for debugging only
+    user = null;
     return SplashScreen(
-      navigateAfterSeconds: user != null ? GlobeScreen(/*uid: user.uid*/) : LoginScreen(),
-      seconds: 5,
+      navigateAfterSeconds: user != null ? GlobeScreen(userId: user.uid) : LoginScreen(),
+      seconds: 2,
       title: Text(
         'Travel the Globe',
         style: new TextStyle(

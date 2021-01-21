@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_signin_button/flutter_signin_button.dart';
 import 'package:travel_the_globe/utilities/constants/colors.dart';
 import 'package:travel_the_globe/utilities/widgets/appbar_notched_bottom.dart';
 import 'package:travel_the_globe/utilities/widgets/form_signup.dart';
@@ -13,8 +12,20 @@ class RegisterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SignUpForm(key: formKey),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40.0),
+                child: Image(
+                  width: 200.0,
+                  height: 200.0,
+                  image: AssetImage("assets/images/logo.png"),
+                ),
+              ),
+              SignUpForm(key: formKey),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: NotchedBottomAppBar(

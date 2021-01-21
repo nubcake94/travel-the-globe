@@ -21,6 +21,8 @@ dependencies:
   flutter_signin_button: ^1.0.0
   email_validator: ^1.0.5
   geocoding: ^1.0.5
+  image: ^2.1.19
+  quiver: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +38,7 @@ flutter:
     - assets/images/logo.png
     - assets/images/wrld-18.png
     - assets/images/map/
+    - assets/countries.json
     #https://vemaps.com/world/wrld-18
     #- images/a_dot_ham.jpeg
 
