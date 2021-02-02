@@ -1,16 +1,19 @@
-# travel_the_globe
+# Travel The Globe
 
-A new Flutter application.
+![intro](docs/intro.jpg)
 
-## Getting Started
+**Travel The Globe** is a prototype of a 3 dimensional travel diary implemented with Flutter. The application is deeply dependent on Google's Firebase services.
 
-This project is a starting point for a Flutter application.
+## Usage and features
+After authentication, the user can see a 3D globe textured with all the countries on Earth.
 
-A few resources to get you started if this is your first Flutter project:
+![3d-globe](docs/3d-globe.jpg)
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+The basics concept is to scratch off the countries already visited. Double clicking on the country reverse geolocates the place clicked
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+![3d-scratch](docs/3d-scratch.jpg)
+
+After scratching down and pressing the **Finish** button, the country is saved to the database, becomes completed and colorized.
+
+![3d-visited](docs/3d-visited.jpg)
+
